@@ -1,0 +1,230 @@
+/**
+
+$match stage will filter documents
+
+5:03 PM
+and $project will filter fields
+ */
+
+
+
+
+use('mongodbVSCodePlaygroundDB');
+db.test.drop();
+db.orders.insertMany( [
+ { cust_id: "A123", amount: 500, status: "A" },
+ { cust_id: "A123", amount: 250, status: "A" },
+ { cust_id: "B212", amount: 200, status: "A" },
+ { cust_id: "A123", amount: 300, status: "D" }
+]);
+
+db.orders.aggregate([
+  {
+  $match: {
+    status: "A"
+  }}
+]);
+db.orders.aggregate([
+  {
+  $match: {$or:[
+    {amount:{$gte:300}}, {status:"D"}
+  ]
+    
+  }}
+]);
+
+    /**
+db.orders.aggregate([{
+  $match: 
+  {status:"A"}},
+  $group: {
+    _id: "$cust_id",
+    total: {
+      $sum: "$amount"
+    }
+  }}
+  ]);
+*/
+  db.orders.aggregate([
+      {$match: {status: "A"}},
+  {$group: {_id: "$cust_id",total: {$sum:"$amount"}
+  }}]);
+
+db.orders.aggregate([{
+    /**
+     * query: The query in MQL.
+     */
+    $match: {
+      status:"A"
+    }},
+    {$group: {
+      _id: "cust_id",
+      total: {
+        $sum: "$amount"
+      }
+    }},
+    {/**
+     * Provide any number of field/order pairs.
+     */
+    $sort: {
+      _id: 1
+    }}]);
+
+    db.orders.aggregate([
+        {/**
+         * query: The query in MQL.
+         */
+        $match: {
+          status: "A"
+        }},
+        {/**
+         * _id: The id of the group.
+         * fieldN: The first field name.
+         */
+        $group: {
+          _id: null,
+          count: {
+            $sum: 1
+          }
+        }}
+    ]);
+
+
+    db.orders.aggregate([
+        {/**
+         * query: The query in MQL.
+         */
+        $match: {
+          status: "A"
+        }},
+        {/**
+         * _id: The id of the group.
+         * fieldN: The first field name.
+         */
+        $group: {
+          _id: null,
+          avg_amount: {
+            $avg: "$amount"
+          }
+        }}
+    ]);
+
+    db.orders.aggregate([
+        {/**
+         * query: The query in MQL.
+         */
+        $match: {
+          status: "A"
+        }},
+        {/**
+         * _id: The id of the group.
+         * fieldN: The first field name.
+         */
+        $group: {
+          _id: "cust_id",
+          avg_amount: {
+            $avg: "$amount"
+          }
+        }}
+    ]);
+
+
+    db.orders.aggregate([
+        {/**
+         * _id: The id of the group.
+         * fieldN: The first field name.
+         */
+        $group: {
+          _id: "cust_id",
+          max_amount: {
+            $max: "$amount"
+          }
+        }}
+    ]);
+
+     db.invemtory.deleteMany({});
+     
+     
+db.inventory.insertMany( [
+
+ { item: "journal", instock: [ { warehouse: "A", qty: 5 }, { warehouse: "C", qty: 15 } ] },
+
+ { item: "notebook", instock: [ { warehouse: "C", qty: 5 } ] },
+
+ { item: "paper", instock: [ { warehouse: "A", qty: 60 }, { warehouse: "B", qty: 15 } ] },
+
+ { item: "planner", instock: [ { warehouse: "A", qty: 40 }, { warehouse: "B", qty: 5 } ] },
+
+ { item: "postcard", instock: [ { warehouse: "B", qty: 15 }, { warehouse: "C", qty: 35 } ] }
+
+] );
+
+//show id and total
+  db.inventory.aggregate([
+
+    {$unwind:"$instock"},
+
+    {$group:{_id:"$item",
+     totalStock:{$sum:"$instock.qty"}}}
+
+]);
+
+//show item and total
+db.inventory.aggregate( [
+
+ { $project: { _id: 0, item: 1, total_stock: { $sum: "$instock.qty" } } }
+
+] );
+
+db.students.insertMany( [
+
+ { "_id": 1, "quizzes": [ 10, 6, 7 ], "labs": [ 5, 8 ], "final": 80, "midterm": 75 },
+
+ { "_id": 2, "quizzes": [ 9, 10 ], "labs": [ 8, 8 ], "final": 95, "midterm": 80 },
+
+ { "_id": 3, "quizzes": [ 4, 5, 5 ], "labs": [ 6, 5 ], "final": 78, "midterm": 70 }
+
+] );
+
+  db.students.aggregate([
+
+    {$project:{total_quiz_scores:{$sum:"$quizzes"}, 
+
+    total_lab_scores:{$sum:"$labs"},
+
+    total_final_scores:{$sum:"$final"},
+
+    total_midterm_scores:{$sum:"$midterm"}}}
+
+]);
+
+
+
+     /*
+    //db.inventory.insertOne( { "_id" : 1, "item" : "ABC1", sizes: [ "S", "M", "L"] } );
+
+     db.inventory.aggregate([{
+    $unwind: 
+      "$sizes"
+    }]); 
+
+    db.inventory2.insertMany( [
+ { "_id" : 1, "item" : "ABC", price: NumberDecimal("80"), "sizes": [ "S", "M", "L" ] },
+ { "_id" : 2, "item" : "EFG", price: NumberDecimal("120"), "sizes" : [ ] },
+ { "_id" : 3, "item" : "IJK", price: NumberDecimal("160"), "sizes": "M" },
+ { "_id" : 4, "item" : "LMN" , price: NumberDecimal("10") },
+ { "_id" : 5, "item" : "XYZ", price: NumberDecimal("5.75"), "sizes" : null }
+] );
+
+db.inventory2.aggregate([
+    {/**
+     * path: Path to the array field.
+     * includeArrayIndex: Optional name for index.
+     * preserveNullAndEmptyArrays: Optional
+     *   toggle to unwind null and empty values.
+    $unwind: {
+      path: "$sizes",
+      preserveNullAndEmptyArrays: true
+    }}
+]);
+ */
